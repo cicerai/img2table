@@ -10,8 +10,8 @@ boto3
 azure-cognitiveservices-vision-computervision
 
 # Paddle
-paddlepaddle
-paddleocr>=2.0.6
+#paddlepaddle
+#paddleocr>=2.0.6
 
 # EasyOCR
 easyocr >= 1.7.0

@@ -1,7 +1,7 @@
-polars[pandas]>=0.19.14
+polars-lts-cpu
 pyarrow>=7
 numpy
 pymupdf>=1.19.1
-opencv-python
+opencv-python-headless
 beautifulsoup4
 xlsxwriter>=3.0.6
