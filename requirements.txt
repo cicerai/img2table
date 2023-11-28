@@ -5,10 +5,6 @@ pymupdf>=1.19.1
 opencv-contrib-python-headless
 beautifulsoup4
 xlsxwriter>=3.0.6
-
-
-
-
 polars-lts-cpu
 pyarrow>=7
 numpy

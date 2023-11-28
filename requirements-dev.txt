@@ -3,16 +3,6 @@
 # GCP
 google-cloud-vision
 
-# AWS
-boto3
-
-# Azure
-azure-cognitiveservices-vision-computervision
-
-# Paddle
-#paddlepaddle
-#paddleocr>=2.0.6
-
 # EasyOCR
 easyocr >= 1.7.0
 pillow>=10.0.1
