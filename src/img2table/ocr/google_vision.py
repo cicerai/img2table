@@ -267,23 +267,12 @@ class VisionOCR(OCRInstance):
         :param api_key: Google Vision API key
         :param timeout: requests timeout in seconds
         """
-        # Extract GCP credentials
-        gcp_credentials = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
-
-        # Validation on input and environment
-        if not (isinstance(api_key, str) or api_key is None):
-            raise TypeError(f"Invalid type {type(api_key)} for api_key argument")
-
-        # If no API key is provided, check for "GOOGLE_APPLICATION_CREDENTIALS" env variable
-        if gcp_credentials is None and api_key is None:
-            raise ValueError('The GOOGLE_APPLICATION_CREDENTIALS environment variable should be set if no API key '
-                             'is provided')
-
         # Instantiate content_getter
-        if gcp_credentials:
-            self.content_getter = VisionAPIContent(timeout=timeout)
-        else:
+        if api_key:
             self.content_getter = VisionEndpointContent(api_key=api_key, timeout=timeout)
+
+        else:
+            self.content_getter = VisionAPIContent(timeout=timeout)
 
     def content(self, document: Document) -> List[List[Dict]]:
         return self.content_getter.get_content(document=document)
