@@ -9,4 +9,7 @@ build
 
 certs
 venv
+env_*
 profiling*
+
+keys/

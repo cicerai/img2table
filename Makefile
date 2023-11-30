@@ -4,6 +4,8 @@ VENV = ./activate_venv
 DIR := $(shell pwd)
 export PYTHONPATH := $(DIR)/src
 
+include ./deploy/$(ENV).env
+
 # Virtual environment commands
 venv:
 	python -m venv ./venv || true
@@ -29,12 +31,6 @@ update-examples:
 	  jupyter nbconvert --to notebook --execute $$f --inplace; \
 	done
 
-# Build commands
-# build: venv
-# 	. $(VENV); python setup.py sdist bdist_wheel
-
-
-# .PHONY: venv
 
 clean: clean-build clean-pyc clean-test ## remove all build, test, coverage and Python artifacts
 
@@ -57,10 +53,16 @@ clean-test: ## remove test and coverage artifacts
 	rm -fr htmlcov/
 	rm -fr .pytest_cache
 
-release: dist ## package and upload a release
-	twine upload --verbose --repository-url https://us-central1-python.pkg.dev/legalia-mvp-dev-386605/img2table/ dist/*
-
 dist: clean ## builds source and wheel package
 	python setup.py sdist
 	python setup.py bdist_wheel
 	ls -l dist
+
+gcloud-auth:
+	gcloud auth activate-service-account \
+	${SERVICE_ACCOUNT} \
+	--key-file=${SA_KEY_FILE}
+
+release: gcloud-auth dist ## package and upload a release
+	twine upload --verbose --repository-url https://us-central1-python.pkg.dev/$(PROJECT_ID)/img2table/ dist/*
+
