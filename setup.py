@@ -1,7 +1,16 @@
-from setuptools import setup
+#!/usr/bin/env python
+from setuptools import setup, find_packages
+
+requirements = []
 
 setup(
-    setup_requires=['pbr'],
     package_dir={'': 'src'},
-    pbr=True,
+    install_requires=requirements,
+    include_package_data=True,
+    keywords='img2table',
+    name='img2table',
+    packages=find_packages(where='src'),
+    test_suite='tests',
+    version='0.0.2',
+    zip_safe=False,
 )
