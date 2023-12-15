@@ -1,4 +1,4 @@
-#-r requirements.txt
+-r requirements.txt
 
 # GCP
 google-cloud-vision==3.5.0
