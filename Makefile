@@ -4,7 +4,7 @@ VENV = ./activate_venv
 DIR := $(shell pwd)
 export PYTHONPATH := $(DIR)/src
 
-include ./deploy/$(ENV).env
+include ./deploy/.env.$(ENV)
 
 # Virtual environment commands
 venv:
@@ -60,7 +60,7 @@ dist: clean ## builds source and wheel package
 gcloud-auth:
 	gcloud auth activate-service-account \
 	${SERVICE_ACCOUNT} \
-	--key-file=${SA_KEY_FILE}
+	--key-file=${SA_KEY_PATH}
 
 release: gcloud-auth dist ## package and upload a release
 	twine upload --verbose --repository-url https://us-central1-python.pkg.dev/$(PROJECT_ID)/img2table/ dist/*

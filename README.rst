@@ -18,6 +18,8 @@ pip install -r requirements-dev.txt
 - For pomares, use pomares.env.
 - For demo-usa, use demo-usa.env.
 
+Add a folder with the keys necessary to do the deployment of the artifact in 'keys' and include the key of the service account that will be used
+
 In this files must contain the following variables for each project:
 
 PROJECT_ID=<projec_id>

@@ -31,3 +31,5 @@ wheel
 setuptools
 pbr
 twine
+keyrings.google-artifactregistry-auth==1.1.2
+keyring==24.3.0
