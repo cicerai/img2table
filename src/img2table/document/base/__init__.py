@@ -8,7 +8,7 @@ from typing import Union, Dict, List, Optional
 
 import numpy as np
 import xlsxwriter
-
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from img2table import Validations
 from img2table.tables.objects.extraction import ExtractedTable
 
@@ -62,8 +62,28 @@ class Document(Validations):
     def images(self) -> List[np.ndarray]:
         raise NotImplementedError
 
+    def process_page(self, page, tables, ocr_df, min_confidence):
+        from img2table.tables.processing.text.titles import get_title_tables
+        # Get OCRDataFrame object for the page
+        ocr_df_page = ocr_df.page(page_number=page)
+        
+        # Process tables for the page
+        processed_tables = []
+        for table in tables:
+            # Get table content
+            content = table.get_content(ocr_df=ocr_df_page, min_confidence=min_confidence)
+            
+            # Filter relevant tables
+            if max(content.nb_rows, content.nb_columns) >= 2:
+                # Retrieve titles
+                title_table = get_title_tables(img=self.images[page], tables=[content], ocr_df=ocr_df_page)
+                
+                processed_tables.extend(title_table)
+        
+        return processed_tables
+
     def get_table_content(self, tables: Dict[int, List["Table"]], ocr: "OCRInstance",
-                          min_confidence: int) -> Dict[int, List[ExtractedTable]]:
+                        min_confidence: int) -> Dict[int, List[ExtractedTable]]:
         """
         Retrieve table content with OCR
         :param tables: dictionary containing extracted tables by page
@@ -84,32 +104,35 @@ class Document(Validations):
         if self.ocr_df is None and ocr is not None:
             self.ocr_df = ocr.of(document=ocr_doc)
 
-        # Retrieve table contents with ocr
-        for idx, page in enumerate(table_pages):
-            ocr_df_page = self.ocr_df.page(page_number=idx)
-            # Get table content
-            tables[page] = [table.get_content(ocr_df=ocr_df_page, min_confidence=min_confidence)
-                            for table in tables[page]]
+        # Retrieve table contents with OCR in parallel
+        with ThreadPoolExecutor() as executor:
+            futures = {page: executor.submit(self.process_page, page, tables[page], self.ocr_df, min_confidence)
+                    for page in table_pages}
+            
+            # Wait for all futures to complete
+            for future in as_completed(futures.values()):
+                future.result()
 
-            # Filter relevant tables
-            tables[page] = [table for table in tables[page] if max(table.nb_rows, table.nb_columns) >= 2]
-
-            # Retrieve titles
-            from img2table.tables.processing.text.titles import get_title_tables
-            tables[page] = get_title_tables(img=self.images[page],
-                                            tables=tables[page],
-                                            ocr_df=ocr_df_page)
+            # Retrieve results from futures
+            for page, future in futures.items():
+                tables[page] = future.result()
 
         # Reset OCR
         self.ocr_df = None
 
+        # Filter and format extracted tables
         return {k: [tb.extracted_table for tb in v
                     if (max(tb.nb_rows, tb.nb_columns) >= 2 and not tb._borderless)
                     or (tb.nb_rows >= 2 and tb.nb_columns >= 3)]
                 for k, v in tables.items()}
 
+    def process_image(self, img, min_confidence, implicit_rows, borderless_tables):
+        from img2table.tables.image import TableImage
+        return TableImage(img=img, min_confidence=min_confidence).extract_tables(implicit_rows=implicit_rows,
+                                                                              borderless_tables=borderless_tables)
+
     def extract_tables(self, ocr: "OCRInstance" = None, implicit_rows: bool = False, borderless_tables: bool = False,
-                       min_confidence: int = 50) -> Dict[int, List[ExtractedTable]]:
+                    min_confidence: int = 50) -> Dict[int, List[ExtractedTable]]:
         """
         Extract tables from document
         :param ocr: OCRInstance object used to extract table content
@@ -118,12 +141,17 @@ class Document(Validations):
         :param min_confidence: minimum confidence level from OCR in order to process text, from 0 (worst) to 99 (best)
         :return: dictionary with page number as key and list of extracted tables as values
         """
-        # Extract tables from document
-        from img2table.tables.image import TableImage
-        tables = {idx: TableImage(img=img,
-                                  min_confidence=min_confidence).extract_tables(implicit_rows=implicit_rows,
-                                                                                borderless_tables=borderless_tables)
-                  for idx, img in enumerate(self.images)}
+        # Extract tables from document in parallel
+        with ThreadPoolExecutor() as executor:
+            futures = {idx: executor.submit(self.process_image, img, min_confidence, implicit_rows, borderless_tables)
+                    for idx, img in enumerate(self.images)}
+            
+            # Wait for all futures to complete
+            for future in as_completed(futures.values()):
+                future.result()
+
+            # Retrieve results from futures
+            tables = {idx: future.result() for idx, future in futures.items()}
 
         # Update table content with OCR if possible
         tables = self.get_table_content(tables=tables,
