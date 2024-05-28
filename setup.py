@@ -11,6 +11,6 @@ setup(
     name='img2table',
     packages=find_packages(where='src'),
     test_suite='tests',
-    version='0.0.3',
+    version='0.0.4',
     zip_safe=False,
 )
